@@ -1,0 +1,2 @@
+micromamba run -n meshcat meshcat-server --open
+micromamba create -n meshcat

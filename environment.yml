@@ -1,0 +1,12 @@
+name: meshcat
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11.0
+  - pip
+  - pre-commit
+  - pip:
+    - meshcat
+
