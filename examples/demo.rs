@@ -11,7 +11,7 @@ pub fn point_cloud() -> LumpedObject {
     let colors = points.clone();
     LumpedObject::builder()
         .geometry(Geometry::new(GeometryType::Buffer {
-            data: BufferGeometryData {
+            data: Box::new(BufferGeometryData {
                 attributes: BufferGeometryAttributes {
                     position: BufferGeometryAttribute {
                         item_size: 3,
@@ -28,7 +28,7 @@ pub fn point_cloud() -> LumpedObject {
                     normal: None,
                     uv: None,
                 },
-            },
+            }),
         }))
         .material(
             Material::builder()
