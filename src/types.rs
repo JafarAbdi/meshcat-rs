@@ -68,7 +68,7 @@ pub struct BufferGeometryData {
 pub enum GeometryType {
     // https://threejs.org/docs/#api/en/core/BufferGeometry
     #[serde(rename = "BufferGeometry")]
-    Buffer { data: BufferGeometryData },
+    Buffer { data: Box<BufferGeometryData> },
     #[serde(rename = "_meshfile_geometry")]
     Mesh { format: String, data: String },
     #[serde(rename = "BoxGeometry")]
