@@ -597,7 +597,7 @@ impl From<&urdf_rs::Geometry> for GeometryType {
                 height_segments: 16,
             },
             urdf_rs::Geometry::Mesh { filename, .. } => {
-                crate::utils::load_mesh(&filename).expect("Failed to load mesh")
+                crate::utils::load_mesh(filename).expect("Failed to load mesh")
             }
         }
     }
