@@ -26,6 +26,7 @@ See the [demo](https://github.com/JafarAbdi/meshcat-rs/blob/main/examples/demo.r
 
 https://user-images.githubusercontent.com/16278108/231297164-04a4dc92-c612-49aa-8700-074935fd2ec5.mp4
 
+![meshcat](https://user-images.githubusercontent.com/16278108/232151198-905e669c-bc5d-485f-9c61-113f67a0de04.png)
 
 ## Contribution
 
