@@ -325,6 +325,7 @@ impl Image {
 pub enum ObjectType {
     Mesh,
     Points,
+    LineSegments,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
