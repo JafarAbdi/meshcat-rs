@@ -1,0 +1,6 @@
+This directory contains the files for the demos.
+
+The files [HeadTextureMultisense.png](./HeadTextureMultisense.png) and [head_multisense.obj](./head_multisense.obj) are copied from https://github.com/rdeits/meshcat.
+The [mesh_0_convex_piece_0.obj](./mesh_0_convex_piece_0.obj), [mesh_0_convex_piece_0.stl](./mesh_0_convex_piece_0.stl), and [mesh_0_convex_piece_0.dae](./mesh_0_convex_piece_0.dae) were copied from https://github.com/rdeits/meshcat-python
+The [sample.urdf](./sample.urdf) was copied from https://github.com/openrr/urdf-viz
+The files in [panda_description](./panda_description) were copied from https://github.com/ros-planning/moveit_resources

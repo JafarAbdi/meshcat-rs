@@ -2,7 +2,7 @@ use std::error::Error;
 
 use base64::{engine::general_purpose, Engine as _};
 use log::info;
-use nalgebra::{Isometry3, Matrix3xX, Matrix4};
+use nalgebra::{Isometry3, Matrix3xX, Matrix4, Translation3, UnitQuaternion};
 use serde::ser::{SerializeSeq, SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
@@ -530,6 +530,74 @@ impl Geometry {
     }
 }
 
+impl From<&urdf_rs::Visual> for Geometry {
+    fn from(visual: &urdf_rs::Visual) -> Self {
+        Geometry::new_with_origin(
+            GeometryType::from(&visual.geometry),
+            Isometry3::from_parts(
+                Translation3::new(
+                    visual.origin.xyz[0],
+                    visual.origin.xyz[1],
+                    visual.origin.xyz[2],
+                ),
+                UnitQuaternion::from_euler_angles(
+                    visual.origin.rpy[0],
+                    visual.origin.rpy[1],
+                    visual.origin.rpy[2],
+                ),
+            ),
+        )
+    }
+}
+
+impl From<&urdf_rs::Collision> for Geometry {
+    fn from(collision: &urdf_rs::Collision) -> Self {
+        Geometry::new_with_origin(
+            GeometryType::from(&collision.geometry),
+            Isometry3::from_parts(
+                Translation3::new(
+                    collision.origin.xyz[0],
+                    collision.origin.xyz[1],
+                    collision.origin.xyz[2],
+                ),
+                UnitQuaternion::from_euler_angles(
+                    collision.origin.rpy[0],
+                    collision.origin.rpy[1],
+                    collision.origin.rpy[2],
+                ),
+            ),
+        )
+    }
+}
+
+impl From<&urdf_rs::Geometry> for GeometryType {
+    fn from(geometry: &urdf_rs::Geometry) -> Self {
+        match geometry {
+            urdf_rs::Geometry::Box { size } => GeometryType::Box {
+                width: size[0],
+                height: size[1],
+                depth: size[2],
+            },
+            urdf_rs::Geometry::Cylinder { radius, length } => GeometryType::Cylinder {
+                radius_top: *radius,
+                radius_bottom: *radius,
+                height: *length,
+                radial_segments: 32,
+                height_segments: 1,
+                theta_start: 0.0,
+                theta_length: 2.0 * std::f64::consts::PI,
+            },
+            urdf_rs::Geometry::Capsule { .. } => {
+                panic!("Capsule geometry is not supported by Meshcat.")
+            }
+            urdf_rs::Geometry::Sphere { radius } => GeometryType::Sphere {
+                radius: *radius,
+                width_segments: 32,
+                height_segments: 16,
+            },
+            urdf_rs::Geometry::Mesh { filename, .. } => {
+                crate::utils::load_mesh(&filename).expect("Failed to load mesh")
+            }
         }
     }
 }

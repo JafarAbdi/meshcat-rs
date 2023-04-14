@@ -26,5 +26,7 @@ log = "0.4.17"
 typed-builder = "0.14.0"
 # Used to make it possible to have a post-build function for LumpedObject
 derive_builder = "0.12.0"
+urdf-rs = "0.6.9"
+itertools = "0.10.5"
 # rand = "0.8.5"
 
