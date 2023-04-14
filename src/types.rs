@@ -331,8 +331,11 @@ pub enum ObjectType {
 pub struct Object {
     pub uuid: Uuid,
     // Both will be set by the build function of LumpedObject
-    pub geometry: Option<Uuid>,
     pub material: Option<Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub geometry: Option<Uuid>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<Box<Object>>,
     // TODO: Change to Isometry3<f64> and handle to homogeneous matrix in the serializer
     pub matrix: Matrix4<f64>,
     #[serde(flatten)]
@@ -341,13 +344,7 @@ pub struct Object {
 
 impl Default for Object {
     fn default() -> Self {
-        Object {
-            uuid: Uuid::new_v4(),
-            geometry: None,
-            material: None,
-            matrix: Isometry3::identity().to_homogeneous(),
-            object_type: ObjectType::Mesh,
-        }
+        Self::new(Isometry3::identity(), ObjectType::Mesh)
     }
 }
 
@@ -355,8 +352,9 @@ impl Object {
     pub fn new(origin: Isometry3<f64>, object_type: ObjectType) -> Self {
         Object {
             uuid: Uuid::new_v4(),
-            geometry: None,
             material: None,
+            geometry: None,
+            children: Vec::new(),
             matrix: origin.to_homogeneous(),
             object_type,
         }
@@ -373,7 +371,7 @@ where
     seq.end()
 }
 
-// textures, images, geometries, materials should be a Vec<_>,
+// textures, images, materials should be a Vec<_>,
 // but I don't see a use case for it yet, so to simplify the code it's just an element (Drake's meshcat interface does the same)
 // https://github.com/mrdoob/three.js/wiki/JSON-Object-Scene-format-4
 #[derive(Clone, Debug, TypedBuilder, Serialize)]
@@ -395,8 +393,8 @@ pub struct LumpedObject {
         skip_serializing_if = "Option::is_none"
     )]
     pub image: Option<Image>,
-    #[serde(rename = "geometries", serialize_with = "to_one_element_array")]
-    pub geometry: Geometry,
+    #[builder(default)]
+    pub geometries: Vec<Geometry>,
     #[builder(default)]
     #[serde(rename = "materials", serialize_with = "to_one_element_array")]
     pub material: Material,
@@ -417,7 +415,7 @@ impl<
         __metadata,
         __texture,
         __image,
-        (Geometry,),
+        (Vec<Geometry>,),
         __material,
         __object,
     )>
@@ -440,12 +438,33 @@ impl<
         }
         // Setting the uuid for the object
         lumped_object.object.material = Some(lumped_object.material.uuid);
-        lumped_object.object.geometry = Some(lumped_object.geometry.uuid);
+        // Meshcat cylinders have their long axis in y.
+        lumped_object.object.children = lumped_object
+            .geometries
+            .iter()
+            .map(|geometry| {
+                let mut object_pose = geometry.origin;
+                if let GeometryType::Cylinder { .. } = &geometry.geometry {
+                    object_pose *= Isometry3::from_parts(
+                        Translation3::new(0.0, 0.0, 0.0),
+                        UnitQuaternion::from_euler_angles(std::f64::consts::FRAC_PI_2, 0.0, 0.0),
+                    );
+                }
+                Box::new(Object {
+                    uuid: Uuid::new_v4(),
+                    material: Some(lumped_object.material.uuid),
+                    geometry: Some(geometry.uuid),
+                    children: Vec::new(),
+                    matrix: object_pose.to_homogeneous(),
+                    object_type: lumped_object.object.object_type.clone(),
+                })
+            })
+            .collect();
         LumpedObject {
             metadata: lumped_object.metadata,
             texture: lumped_object.texture,
             image: lumped_object.image,
-            geometry: lumped_object.geometry,
+            geometries: lumped_object.geometries,
             material: lumped_object.material,
             object: lumped_object.object,
         }
@@ -485,18 +504,32 @@ pub struct DeleteData {
     #[serde(rename = "type")]
     pub request_type: String,
 }
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Geometry {
     pub uuid: Uuid,
     #[serde(flatten)]
     pub geometry: GeometryType,
+    // This is used for multi-geometry objects, when creating the children of the object (Type
+    // Object)
+    #[serde(skip)]
+    pub origin: Isometry3<f64>,
 }
 
 impl Geometry {
     pub fn new(geometry: GeometryType) -> Self {
+        Self::new_with_origin(geometry, Isometry3::identity())
+    }
+
+    pub fn new_with_origin(geometry: GeometryType, origin: Isometry3<f64>) -> Self {
         Self {
             uuid: Uuid::new_v4(),
             geometry,
+            origin,
+        }
+    }
+}
+
         }
     }
 }
