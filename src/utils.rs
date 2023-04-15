@@ -4,7 +4,11 @@ use super::types::*;
 use std::error::Error;
 
 pub fn file_extension(path: &str) -> Result<&str, Box<dyn Error>> {
-    Ok(path.split('.').last().ok_or("Invalid file extension")?)
+    let mut iter = path.split('.');
+    if let (Some(extension), Some(_)) = (iter.next_back(), iter.next_back()) {
+        return Ok(extension);
+    }
+    Err(format!("Invalid file extension: {}", path).into())
 }
 
 // TODO: https://github.com/rdeits/MeshCat.jl/blob/master/src/mesh_files.jl
@@ -80,4 +84,16 @@ pub fn triad(pose: Isometry3<f64>) -> LumpedObject {
         )
         .object(Object::new(pose, ObjectType::LineSegments))
         .build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_file_extension() {
+        assert_eq!(file_extension("foo.obj").unwrap(), "obj");
+        assert_eq!(file_extension("foo.obj.gz").unwrap(), "gz");
+        assert!(file_extension("foo").is_err());
+    }
 }

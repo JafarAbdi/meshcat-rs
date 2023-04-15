@@ -240,7 +240,7 @@ impl Default for Material {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum TextureType {
     Text {
@@ -661,5 +661,129 @@ impl Meshcat {
         let message = self.socket.recv_string(0)?;
         info!("Received reply {} {}", 0, message.unwrap());
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lumped_object() {
+        let lumped_object = LumpedObject::builder()
+            .geometries(vec![Geometry::new(GeometryType::Box {
+                width: 1.0,
+                height: 1.0,
+                depth: 1.0,
+            })])
+            .build();
+        assert_eq!(lumped_object.geometries.len(), 1);
+        assert!(lumped_object.texture.is_none());
+        assert!(lumped_object.image.is_none());
+        // We only use this field for the children (The geometries the object is composed of)
+        assert!(lumped_object.object.geometry.is_none());
+        assert_eq!(lumped_object.object.children.len(), 1);
+        assert!(lumped_object.object.children[0].geometry.is_some());
+        assert_eq!(
+            lumped_object.object.children[0].geometry.unwrap(),
+            lumped_object.geometries[0].uuid
+        );
+        assert!(lumped_object.material.map.is_none());
+    }
+
+    #[test]
+    fn test_multiple_geometries() {
+        let lumped_object = LumpedObject::builder()
+            .geometries(vec![
+                Geometry::new(GeometryType::Box {
+                    width: 1.0,
+                    height: 1.0,
+                    depth: 1.0,
+                }),
+                Geometry::new(GeometryType::Cylinder {
+                    radius_top: 0.2,
+                    radius_bottom: 0.2,
+                    height: 0.5,
+                    radial_segments: 20,
+                    height_segments: 10,
+                    theta_start: 0.0,
+                    theta_length: 2.0 * std::f64::consts::PI,
+                }),
+            ])
+            .build();
+        assert_eq!(lumped_object.geometries.len(), 2);
+        assert!(lumped_object.texture.is_none());
+        assert!(lumped_object.image.is_none());
+        assert!(lumped_object.object.geometry.is_none());
+        assert_eq!(lumped_object.object.children.len(), 2);
+        assert!(lumped_object.object.children[0].geometry.is_some());
+        assert_eq!(
+            lumped_object.object.children[0].geometry.unwrap(),
+            lumped_object.geometries[0].uuid
+        );
+        assert!(lumped_object.object.children[1].geometry.is_some());
+        assert_eq!(
+            lumped_object.object.children[1].geometry.unwrap(),
+            lumped_object.geometries[1].uuid
+        );
+        assert!(lumped_object.material.map.is_none());
+    }
+
+    #[test]
+    fn test_object_with_texture() {
+        let lumped_object = LumpedObject::builder()
+            .geometries(vec![Geometry::new(GeometryType::Box {
+                width: 1.0,
+                height: 1.0,
+                depth: 1.0,
+            })])
+            .texture(Texture::new(TextureType::new_text(
+                "Hello, meshcat!",
+                12,
+                "sans-serif",
+            )))
+            .build();
+        assert_eq!(lumped_object.geometries.len(), 1);
+        assert!(lumped_object.texture.is_some());
+        assert!(lumped_object.image.is_none());
+        assert!(lumped_object.object.geometry.is_none());
+        assert_eq!(lumped_object.object.children.len(), 1);
+        assert!(lumped_object.object.children[0].geometry.is_some());
+        assert_eq!(
+            lumped_object.object.children[0].geometry.unwrap(),
+            lumped_object.geometries[0].uuid
+        );
+        assert!(lumped_object.material.map.is_some());
+        assert_eq!(
+            lumped_object.material.map.unwrap(),
+            lumped_object.texture.unwrap().uuid
+        );
+    }
+
+    #[test]
+    fn test_object_with_texture_image() {
+        let lumped_object = LumpedObject::builder()
+            .geometries(vec![Geometry::new(GeometryType::Box {
+                width: 1.0,
+                height: 1.0,
+                depth: 1.0,
+            })])
+            .image(Image::new("examples/data/HeadTextureMultisense.png"))
+            .texture(Texture::new(TextureType::new_image()))
+            .build();
+        assert_eq!(lumped_object.geometries.len(), 1);
+        assert!(lumped_object.texture.is_some());
+        assert!(lumped_object.image.is_some());
+        assert!(lumped_object.material.map.is_some());
+        let texture = lumped_object.texture.unwrap();
+        assert_eq!(lumped_object.material.map.unwrap(), texture.uuid);
+        assert_eq!(
+            texture.texture_type,
+            TextureType::Image {
+                image: Some(lumped_object.image.unwrap().uuid),
+                repeat: [1, 1],
+                wrap: [1001, 1001],
+            }
+        );
     }
 }
