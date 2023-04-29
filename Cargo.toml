@@ -20,5 +20,5 @@ base64 = "0.21.0"
 log = "0.4.17"
 # Used for a nice builder pattern
 typed-builder = "0.14.0"
-urdf-rs = "0.6.9"
+urdf-rs = "0.7.1"
 itertools = "0.10.5"
