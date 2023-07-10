@@ -406,11 +406,11 @@ pub struct LumpedObject {
 // https://github.com/idanarye/rust-typed-builder/blob/master/examples/complicate_build.rs
 #[allow(non_camel_case_types)]
 impl<
-        __metadata: LumpedObjectBuilder_Optional<Metadata>,
-        __texture: LumpedObjectBuilder_Optional<Option<Texture>>,
-        __image: LumpedObjectBuilder_Optional<Option<Image>>,
-        __material: LumpedObjectBuilder_Optional<Material>,
-        __object: LumpedObjectBuilder_Optional<Object>,
+        __metadata: typed_builder::Optional<Metadata>,
+        __texture: typed_builder::Optional<Option<Texture>>,
+        __image: typed_builder::Optional<Option<Image>>,
+        __material: typed_builder::Optional<Material>,
+        __object: typed_builder::Optional<Object>,
     >
     LumpedObjectBuilder<(
         __metadata,
