@@ -16,7 +16,7 @@ rmp-serde = "1.1.1"
 rmp = "0.8.11"
 zmq = "0.10.0"
 nalgebra = { version = "0.32", features = ["serde-serialize", "rand"] }
-base64 = "0.21.0"
+base64 = "0.22.0"
 log = "0.4.17"
 # Used for a nice builder pattern
 typed-builder = "0.18.0"
