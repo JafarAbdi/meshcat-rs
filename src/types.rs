@@ -2,7 +2,7 @@ use std::error::Error;
 
 use base64::{engine::general_purpose, Engine as _};
 use log::info;
-use nalgebra::{Isometry3, Matrix3xX, Matrix4, Translation3, UnitQuaternion};
+use nalgebra::{Isometry3, Matrix3xX, Matrix4, Translation3, UnitQuaternion, Vector3, Vector4};
 use serde::ser::{SerializeSeq, SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
@@ -506,6 +506,50 @@ pub struct DeleteData {
     pub request_type: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum PropertyType {
+    Visible(bool),
+    Position(Vector3<f64>),
+    Quaternion(Vector4<f64>),
+    Scale(Vector3<f64>),
+    Color(Vector4<f64>),
+    Opacity(f64),
+    ModulatedOpacity(f64),
+    TopColor(Vector3<f64>),
+    BottomColor(Vector3<f64>),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SetPropertyData {
+    path: String,
+    #[serde(rename = "type")]
+    request_type: String,
+    property: String,
+    value: PropertyType,
+}
+
+impl SetPropertyData {
+    pub fn new(path: &str, property: PropertyType) -> Self {
+        SetPropertyData {
+            path: path.to_string(),
+            request_type: "set_property".to_string(),
+            property: match property {
+                PropertyType::Visible(_) => String::from("visible"),
+                PropertyType::Position(_) => String::from("position"),
+                PropertyType::Quaternion(_) => String::from("quaternion"),
+                PropertyType::Scale(_) => String::from("scale"),
+                PropertyType::Color(_) => String::from("color"),
+                PropertyType::Opacity(_) => String::from("opacity"),
+                PropertyType::ModulatedOpacity(_) => String::from("modulated_opacity"),
+                PropertyType::TopColor(_) => String::from("top_color"),
+                PropertyType::BottomColor(_) => String::from("bottom_color"),
+            },
+            value: property,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Geometry {
     pub uuid: Uuid,
@@ -638,6 +682,18 @@ impl Meshcat {
 
     pub fn set_transform(&self, path: &str, matrix: Isometry3<f64>) -> Result<(), Box<dyn Error>> {
         let data = SetTransformData::new(matrix, path);
+        let buf = rmp_serde::encode::to_vec_named(&data)?;
+        self.socket.send_multipart(
+            [data.request_type.as_bytes(), data.path.as_bytes(), &buf],
+            0,
+        )?;
+        let message = self.socket.recv_string(0)?;
+        info!("Received reply {} {}", 0, message.unwrap());
+        Ok(())
+    }
+
+    pub fn set_property(&self, path: &str, property: PropertyType) -> Result<(), Box<dyn Error>> {
+        let data = SetPropertyData::new(path, property);
         let buf = rmp_serde::encode::to_vec_named(&data)?;
         self.socket.send_multipart(
             [data.request_type.as_bytes(), data.path.as_bytes(), &buf],
