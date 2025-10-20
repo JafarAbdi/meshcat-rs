@@ -19,6 +19,6 @@ nalgebra = { version = "0.34", features = ["serde-serialize", "rand"] }
 base64 = "0.22.0"
 log = "0.4.17"
 # Used for a nice builder pattern
-typed-builder = "0.22.0"
+typed-builder = "0.23.0"
 urdf-rs = "0.9.0"
 itertools = "0.14.0"
