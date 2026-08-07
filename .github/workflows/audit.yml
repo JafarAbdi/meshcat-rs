@@ -20,7 +20,14 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/audit-check@v1
+      # Cargo.lock is not committed; audit-check@v2 requires one to exist
+      - name: Generate Cargo.lock
+        run: cargo generate-lockfile
+      - uses: rustsec/audit-check@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # quick-xml < 0.41 DoS advisories reached via urdf-rs; no urdf-rs
+          # release with a patched quick-xml exists yet. URDF input is local
+          # and trusted. Drop once urdf-rs ships with quick-xml >= 0.41.
+          ignore: RUSTSEC-2026-0194,RUSTSEC-2026-0195
 
